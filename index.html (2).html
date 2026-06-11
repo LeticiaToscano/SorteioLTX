@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteio · Ativos da Semana — Seja Livre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05070d; --bg2:#0a0e16; --surface:#0d131f; --surface2:#121a28;
+    --border:#1a2436; --border2:#27364e;
+    --text:#e9f1fb; --muted:#8a97ad; --faint:#566479;
+    --accent:#28c7f0; --accent2:#2f7bff; --accent-dim:#1a8fb8; --accent-soft:rgba(40,199,240,.12);
+    --warn:#e0a44b; --warn-soft:rgba(224,164,75,.1); --ok:#2fe6a0;
+    --radius:14px; --radius-sm:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Sora',system-ui,sans-serif; font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(800px 460px at 85% -10%, rgba(40,199,240,.10), transparent 60%),radial-gradient(700px 500px at 8% 4%, rgba(47,123,255,.08), transparent 55%);
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 26px 80px}
+  .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(140deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;font-weight:800;font-size:19px;color:#05070d;box-shadow:0 6px 22px rgba(40,199,240,.30)}
+  .brand h1{font-size:17px;font-weight:700;letter-spacing:-.2px;line-height:1.15}
+  .brand p{font-size:12px;color:var(--muted);font-weight:400}
+  .src{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:100px;padding:7px 8px 7px 15px;font-size:12.5px;color:var(--muted)}
+  .src .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);transition:.2s}
+  .src.live .dot{background:var(--ok);box-shadow:0 0 0 3px rgba(62,207,142,.18)}
+  .src.demo .dot{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+  .src b{color:var(--text);font-weight:600}
+  .refresh{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);width:30px;height:30px;
+    border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:.15s}
+  .refresh:hover{color:var(--text);border-color:var(--accent)}
+  .refresh.spin svg{animation:rot .8s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .filter{display:flex;align-items:flex-end;gap:14px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;margin-bottom:6px;flex-wrap:wrap}
+  .ffield label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--faint);font-weight:600;margin-bottom:7px}
+  input[type=date]{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:inherit;
+    font-size:13.5px;padding:10px 12px;border-radius:9px;color-scheme:dark}
+  input[type=date]:focus{outline:none;border-color:var(--accent)}
+  .sep{align-self:center;color:var(--faint);padding:0 2px;margin-top:18px}
+  .quick{display:flex;gap:6px;margin-top:18px}
+  .chip{background:var(--bg2);border:1px solid var(--border2);color:var(--muted);font-family:inherit;font-size:12px;
+    padding:9px 13px;border-radius:8px;cursor:pointer;transition:.14s}
+  .chip:hover{border-color:var(--accent);color:var(--text)}
+  .fspace{flex:1}
+  .fnote{font-size:12px;color:var(--muted);margin-top:18px;align-self:center}
+  .fnote b{color:var(--text)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0 16px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px 18px;position:relative;overflow:hidden}
+  .kpi .lab{font-size:11.5px;color:var(--muted);font-weight:500}
+  .kpi .val{font-size:30px;font-weight:600;margin-top:9px;letter-spacing:-1px}
+  .kpi.accent{border-color:rgba(40,199,240,.32)}
+  .kpi.accent .val{background:linear-gradient(100deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .kpi.accent::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--accent-soft)}
+  .kpi.warn .val{color:var(--warn)}
+  .kpi .sub{font-size:11px;color:var(--faint);margin-top:3px}
+
+  .results{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .rtop{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tabs{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:10px}
+  .tab{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:500;
+    padding:8px 14px;border-radius:7px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:7px}
+  .tab.active{background:var(--surface2);color:var(--text)}
+  .tab .cnt{font-size:11px;background:var(--border2);color:var(--text);padding:1px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace}
+  .tab.active .cnt{background:var(--accent);color:#05070d}
+  .spacer{flex:1}
+  .search{position:relative}
+  .search input{background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:inherit;
+    font-size:12.5px;padding:9px 12px 9px 32px;border-radius:8px;width:200px}
+  .search input:focus{outline:none;border-color:var(--accent)}
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.45}
+  .ghost{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:inherit;font-size:12px;
+    font-weight:500;padding:9px 13px;border-radius:8px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:7px}
+  .ghost:hover{border-color:var(--accent);color:var(--text)}
+  .ghost.raffle{background:var(--accent-soft);border-color:rgba(40,199,240,.4);color:var(--accent)}
+  .ghost.raffle:hover{background:var(--accent);color:#05070d;border-color:var(--accent)}
+
+  .tbl-scroll{max-height:520px;overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{position:sticky;top:0;background:var(--surface2);text-align:left;font-size:11px;text-transform:uppercase;
+    letter-spacing:.6px;color:var(--faint);font-weight:600;padding:11px 16px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1}
+  tbody td{padding:11px 16px;border-bottom:1px solid var(--border);color:var(--text)}
+  tbody tr:hover{background:var(--bg2)}
+  tbody td.num{text-align:right}
+  .nm-cell{font-weight:500}
+  .pill-n{display:inline-block;min-width:34px;text-align:center;background:var(--accent-soft);color:var(--accent);
+    font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px}
+  td .mut{color:var(--muted)}
+  .empty{padding:56px 20px;text-align:center;color:var(--muted)}
+  .empty .e-big{font-size:14px;font-weight:500;color:var(--text);margin-bottom:5px}
+
+  .loading{padding:70px 20px;text-align:center;color:var(--muted)}
+  .loading .ld{width:30px;height:30px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;
+    margin:0 auto 14px;animation:rot .8s linear infinite}
+
+  .banner{display:flex;align-items:center;gap:12px;background:var(--warn-soft);border:1px solid rgba(224,164,75,.3);
+    border-radius:var(--radius);padding:13px 16px;margin-bottom:16px;font-size:13px;color:var(--text)}
+  .banner b{color:var(--warn)}
+  .banner .how{margin-left:auto;color:var(--warn);cursor:pointer;font-weight:600;font-size:12.5px;white-space:nowrap}
+
+  .overlay{position:fixed;inset:0;background:rgba(5,5,6,.82);backdrop-filter:blur(6px);display:none;place-items:center;z-index:50;padding:24px}
+  .overlay.show{display:grid}
+  .draw{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:38px 34px;width:min(440px,100%);text-align:center;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .draw .x{position:absolute;top:14px;right:14px;background:var(--bg2);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1}
+  .draw .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-weight:600;margin-bottom:6px}
+  .draw .barra-lab{font-size:12.5px;color:var(--muted);margin-bottom:24px}
+  .slot{height:64px;display:grid;place-items:center;margin:10px 0 6px;overflow:hidden}
+  .slot .name{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1.2}
+  .slot.rolling .name{color:var(--muted)}
+  .slot.done .name{color:var(--accent);text-shadow:0 0 30px rgba(40,199,240,.45)}
+  .draw .meta{font-size:13px;color:var(--muted);min-height:42px;line-height:1.6;margin-top:6px}
+  .draw .meta span{color:var(--text)}
+  .draw .acts{display:flex;gap:10px;margin-top:24px}
+  .draw .acts button{flex:1;font-family:inherit;font-size:13px;font-weight:600;padding:11px;border-radius:9px;cursor:pointer;border:none}
+  .draw .again{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+  .draw .again:hover{border-color:var(--accent)}
+  .draw .copy{background:var(--accent);color:#05070d}
+  .draw .copy:hover{background:#4fd6f7}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  .slot.done{animation:pulse .5s ease}
+
+  .foot{margin-top:26px;text-align:center;font-size:11.5px;color:var(--faint)}
+
+  @media (max-width:860px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .search input{width:140px}
+    .filter{gap:10px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark">SL</div>
+      <div>
+        <h1>Sorteio · Ativos da Semana</h1>
+        <p>Seja Livre — barras Academy e Seja Livre 95</p>
+      </div>
+    </div>
+    <div class="src" id="srcPill">
+      <span class="dot"></span>
+      <span id="srcText">Conectando…</span>
+      <button class="refresh" id="refreshBtn" title="Atualizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg></button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" style="display:none">
+    <span>📋 <b>Modo demonstração.</b> Conecte as planilhas pra ver os dados reais — os números abaixo são de exemplo.</span>
+    <span class="how" id="howLink">Como conectar →</span>
+  </div>
+
+  <div class="filter">
+    <div class="ffield"><label>De</label><input type="date" id="dDe"></div>
+    <span class="sep">→</span>
+    <div class="ffield"><label>Até</label><input type="date" id="dAte"></div>
+    <div class="quick">
+      <button class="chip" data-q="prev">Semana anterior</button>
+      <button class="chip" data-q="cur">Esta semana</button>
+    </div>
+    <div class="fspace"></div>
+    <div class="fnote">Ativo = operou <b>≥ 1 contrato</b> no período</div>
+  </div>
+
+  <div id="loading" class="loading"><div class="ld"></div>Lendo a planilha…</div>
+
+  <div id="dash" style="display:none">
+    <div class="kpis">
+      <div class="kpi accent"><div class="lab">Ativos · Academy</div><div class="val mono" id="kAcad">0</div><div class="sub">prontos pro sorteio</div></div>
+      <div class="kpi accent"><div class="lab">Ativos · Seja Livre 95</div><div class="val mono" id="k95">0</div><div class="sub">prontos pro sorteio</div></div>
+      <div class="kpi"><div class="lab">Contratos no período</div><div class="val mono" id="kContr">0</div><div class="sub">somados nas 2 barras</div></div>
+      <div class="kpi warn"><div class="lab">Sem contato</div><div class="val mono" id="kSem">0</div><div class="sub">resolver na mão</div></div>
+    </div>
+
+    <div class="results">
+      <div class="rtop">
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="Academy">Academy <span class="cnt" id="tabAcad">0</span></button>
+          <button class="tab" data-tab="Seja Livre 95">Seja Livre 95 <span class="cnt" id="tab95">0</span></button>
+          <button class="tab" data-tab="Sem contato">Sem contato <span class="cnt" id="tabSem">0</span></button>
+        </div>
+        <div class="spacer"></div>
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+          <input type="text" id="search" placeholder="Buscar nome…">
+        </div>
+        <button class="ghost" id="exportBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/><path d="M4 20h16"/></svg>Exportar</button>
+        <button class="ghost raffle" id="raffleBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="16" cy="16" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>Sortear</button>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Sinacor</th><th class="num">Contratos</th><th class="num">Dias</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot" id="foot">cruzamento pelo Sinacor · 1 entrada por CPF</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="draw">
+    <button class="x" id="closeDraw">×</button>
+    <div class="eyebrow">Ganhador do período</div>
+    <div class="barra-lab" id="drawBarra">—</div>
+    <div class="slot rolling" id="slot"><div class="name" id="drawName">—</div></div>
+    <div class="meta" id="drawMeta"></div>
+    <div class="acts">
+      <button class="again" id="againBtn">Sortear de novo</button>
+      <button class="copy" id="copyBtn">Copiar contato</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== CONFIGURAÇÃO ===================== */
+/* Conecte quantas planilhas quiser. Cada uma tem seu próprio app
+   da web (Code.gs publicado naquela planilha) e seu token.
+   A ORDEM importa: se duas planilhas tiverem a mesma barra,
+   vale a operação da PRIMEIRA da lista (evita contar em dobro).
+   Dica: ponha primeiro a planilha que tem as operações completas. */
+const SOURCES = [
+  { name: 'Clientes Seja Livre', url: 'https://script.google.com/macros/s/AKfycbwZ5gkhf2ZljHCtdJ9CjRg_PvjCyTY2E5C_iAnxKU9F2HMfMkYMuxE_l6d0MgFW8Imy/exec', token: 'Sejalivre2026' },  // base-mãe de contatos (cliente novo entra aqui)
+  { name: 'Volume Operado', url: 'https://script.google.com/macros/s/AKfycbyWI0sEn37eacPfxVSt22mkqXyZa2Nafg07eoXgGDHLd0AU1LamBdHfPFQ4mXIwgpNU/exec', token: 'Sejalivre2026' },  // operações das 2 barras
+  { name: 'Controle Leo',   url: 'https://script.google.com/macros/s/AKfycby0RMUHYTeAyqrZDhYbPdsMC9n9FbwwjCQmkUM-eAEF0l2wFwrW4NtOa9tHxe8HwxzmCA/exec', token: 'Sejalivre2026' },  // contatos (+ Academy)
+];
+/* ======================================================= */
+
+const $ = s => document.querySelector(s);
+const norm = s => (s==null?'':String(s)).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+const BARRAS = {'SEJA LIVRE ACADEMY':'Academy','SEJA LIVRE 95':'Seja Livre 95'};
+const BARRA_LABEL={}; Object.entries(BARRAS).forEach(([k,v])=>BARRA_LABEL[k.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()]=v);
+function barraLabel(s){return BARRA_LABEL[(s==null?'':String(s)).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()]||null;}
+let RAW=null, DATA=null, activeTab='Academy', lastWinner=null, demoMode=false;
+
+function mondayOfWeek(d){const x=new Date(d);const off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);x.setHours(0,0,0,0);return x;}
+function fmt(d){return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}
+function isoStr(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function dOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();}
+function toDate(v){
+  if(v instanceof Date) return v;
+  if(typeof v==='number') return new Date(Math.round((v-25569)*86400000));
+  const s=String(v).trim(); let m;
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return new Date(+m[1],+m[2]-1,+m[3]);
+  if((m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/))) return new Date(+m[3],+m[2]-1,+m[1]);
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+function toNum(v){if(v==null)return NaN;if(typeof v==='number')return v;const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));return isNaN(n)?NaN:n;}
+function clean(v){if(v==null)return '';const s=String(v).trim();return (s==='-'||s.toLowerCase()==='nan')?'':s;}
+function colIdx(h,...names){const t=names.map(norm);for(let i=0;i<h.length;i++){if(t.includes(norm(h[i])))return i;}return -1;}
+
+function setRange(kind){
+  const mon=mondayOfWeek(new Date()); let ini,fim;
+  if(kind==='cur'){ini=new Date(mon);fim=new Date(mon);fim.setDate(fim.getDate()+4);}
+  else{ini=new Date(mon);ini.setDate(ini.getDate()-7);fim=new Date(ini);fim.setDate(fim.getDate()+4);}
+  $('#dDe').value=isoStr(ini); $('#dAte').value=isoStr(fim);
+}
+setRange('prev');
+$('#dDe').addEventListener('change',recompute);
+$('#dAte').addEventListener('change',recompute);
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{setRange(c.dataset.q);recompute();}));
+
+async function load(){
+  $('#refreshBtn').classList.add('spin');
+  const active=SOURCES.filter(s=>s.url && s.url.trim());
+  try{
+    if(active.length){
+      const parsed=[];
+      for(const s of active){
+        const url=s.url+(s.url.includes('?')?'&':'?')+'token='+encodeURIComponent(s.token||'');
+        const res=await fetch(url); const j=await res.json();
+        if(j.error) throw new Error('Token recusado em "'+s.name+'".');
+        parsed.push({name:s.name, parsed:parseSheets(j.sheets), updated:j.updated});
+      }
+      RAW=mergeSources(parsed); demoMode=false;
+      setSource('live', parsed.map(p=>p.updated).filter(Boolean).sort().pop(), null, parsed.length);
+    } else { RAW=demoData(); demoMode=true; setSource('demo'); }
+  }catch(err){ RAW=demoData(); demoMode=true; setSource('demo',null,err.message); }
+  finally{
+    $('#refreshBtn').classList.remove('spin');
+    $('#loading').style.display='none'; $('#dash').style.display='block';
+    $('#banner').style.display=demoMode?'flex':'none';
+    recompute();
+  }
+}
+
+/* mescla várias planilhas: contatos preenchidos de todas;
+   barra e contato vêm da base (Clientes Seja Livre); operações de 1 fonte só */
+function mergeSources(list){
+  const contacts={};
+  list.forEach(s=>{
+    for(const k in s.parsed.contacts){
+      const n=s.parsed.contacts[k], c=contacts[k]||(contacts[k]={});
+      ['nome','tel','email','cpf','barra'].forEach(f=>{ if(!c[f]&&n[f]) c[f]=n[f]; });
+    }
+  });
+  // operações vêm da PRIMEIRA planilha que tiver operações (evita contar em dobro)
+  const opsSrc=list.find(s=>s.parsed.ops.length);
+  const ops=opsSrc?opsSrc.parsed.ops:[];
+  return {ops, contacts};
+}
+function setSource(state,updated,errMsg,count){
+  const pill=$('#srcPill'); pill.className='src '+state;
+  if(state==='live'){
+    const t=updated?new Date(updated).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+    const n=count||1;
+    $('#srcText').innerHTML=(n>1?n+' planilhas conectadas':'Planilha conectada')+(t?' · <b>'+t+'</b>':'');
+  } else { $('#srcText').textContent=errMsg?'Sem conexão — demonstração':'Demonstração'; }
+}
+
+function parseSheets(sheets){
+  const tabs=Object.entries(sheets).map(([name,rows])=>({name,rows,h:(rows[0]||[])}));
+  // aba de operações: tem Data + Contratos (a barra NÃO vem daqui)
+  const opsTab=tabs.find(t=>colIdx(t.h,'data')>=0 && colIdx(t.h,'contratos')>=0);
+  const ops=[];
+  if(opsTab){
+    const h=opsTab.h,iC=colIdx(h,'conta sinacor','sinacor'),iD=colIdx(h,'data'),iN=colIdx(h,'contratos');
+    for(let r=1;r<opsTab.rows.length;r++){
+      const row=opsTab.rows[r]; if(!row)continue;
+      const sin=toNum(row[iC]); if(isNaN(sin))continue;
+      const d=toDate(row[iD]); if(!d)continue;
+      ops.push({sinacor:sin,date:d,contr:toNum(row[iN])||0});
+    }
+  }
+  // contatos + BARRA (a barra de cada pessoa é decidida na base)
+  const contacts={};
+  tabs.forEach(t=>{
+    const h=t.h,cS=colIdx(h,'sinacor'),cN=colIdx(h,'nome'); if(cS<0||cN<0)return;
+    const cT=colIdx(h,'telefone'),cE=colIdx(h,'e-mail','email'),cP=colIdx(h,'cpf'),cB=colIdx(h,'barra');
+    for(let r=1;r<t.rows.length;r++){
+      const row=t.rows[r]; if(!row)continue; const sin=toNum(row[cS]); if(isNaN(sin))continue;
+      const k=String(sin),cur=contacts[k]||(contacts[k]={});
+      if(!cur.nome) cur.nome=clean(row[cN]);
+      if(!cur.tel&&cT>=0) cur.tel=clean(row[cT]);
+      if(!cur.email&&cE>=0) cur.email=clean(row[cE]);
+      if(!cur.cpf&&cP>=0) cur.cpf=clean(row[cP]);
+      if(!cur.barra&&cB>=0) cur.barra=clean(row[cB]);
+    }
+  });
+  return {ops,contacts};
+}
+
+function recompute(){
+  if(!RAW)return;
+  const ini=toDate($('#dDe').value),fim=toDate($('#dAte').value); if(!ini||!fim)return;
+  const lo=dOnly(ini),hi=dOnly(fim);
+  // 1) quem operou no período (qualquer barra), somando contratos por Sinacor
+  const opsBy={};
+  RAW.ops.forEach(o=>{
+    const d=dOnly(o.date); if(d<lo||d>hi)return;
+    const key=String(o.sinacor);
+    const g=opsBy[key]||(opsBy[key]={contr:0,days:new Set()});
+    g.contr+=o.contr; g.days.add(d);
+  });
+  // 2) classifica cada um pela BARRA da base (Clientes Seja Livre)
+  const out={}; Object.values(BARRAS).forEach(b=>out[b]=[]);
+  const sem=[]; let totalContr=0;
+  for(const [sin,g] of Object.entries(opsBy)){
+    if(g.contr<1)continue;
+    const c=RAW.contacts[sin]||{};
+    const label=barraLabel(c.barra);
+    if(!label)continue;                 // não é 95 nem Academy na base -> fora
+    totalContr+=g.contr;
+    const item={nome:c.nome||'',tel:c.tel||'',email:c.email||'',sinacor:+sin,cpf:c.cpf||'',contr:Math.round(g.contr),dias:g.days.size};
+    if(!item.nome) sem.push({...item,barra:label}); else out[label].push(item);
+  }
+  // 3) 1 entrada por CPF
+  for(const label of Object.values(BARRAS)){
+    const seen={};
+    out[label].sort((a,b)=>b.contr-a.contr).forEach(it=>{const k=it.cpf||('s'+it.sinacor); if(!seen[k])seen[k]=it;});
+    out[label]=Object.values(seen).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  }
+  DATA={out,sem,ini,fim,totalContr}; render();
+}
+
+function render(){
+  const a=DATA.out['Academy'].length,n=DATA.out['Seja Livre 95'].length,s=DATA.sem.length;
+  $('#kAcad').textContent=a; $('#k95').textContent=n;
+  $('#kContr').textContent=DATA.totalContr.toLocaleString('pt-BR'); $('#kSem').textContent=s;
+  $('#tabAcad').textContent=a; $('#tab95').textContent=n; $('#tabSem').textContent=s;
+  renderTable();
+}
+function currentRows(){return activeTab==='Sem contato'?DATA.sem:DATA.out[activeTab];}
+function renderTable(){
+  const q=norm($('#search').value); let rows=currentRows(); const isSem=activeTab==='Sem contato';
+  if(q) rows=rows.filter(r=>norm(r.nome).includes(q)||String(r.sinacor).includes(q));
+  const tb=$('#tbody');
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="e-big">${isSem?'Nenhuma conta sem contato':'Nada no período'}</div>${isSem?'Todos os ativos têm cadastro.':'Ajuste as datas ou a busca.'}</div></td></tr>`;return;
+  }
+  tb.innerHTML=rows.map(r=>{
+    if(isSem) return `<tr><td class="nm-cell mut">conta ${r.sinacor}</td><td class="mut">—</td><td class="mut">sem cadastro</td><td class="mono">${r.sinacor}</td><td class="num"><span class="pill-n">${r.contr}</span></td><td class="num mono">${r.dias}</td></tr>`;
+    return `<tr><td class="nm-cell">${r.nome}</td><td class="mono">${r.tel||'<span class="mut">—</span>'}</td><td>${r.email?`<span class="mut">${r.email}</span>`:'<span class="mut">—</span>'}</td><td class="mono">${r.sinacor}</td><td class="num"><span class="pill-n">${r.contr.toLocaleString('pt-BR')}</span></td><td class="num mono">${r.dias}</td></tr>`;
+  }).join('');
+}
+$('#search').addEventListener('input',renderTable);
+$('#tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); activeTab=t.dataset.tab; $('#search').value=''; renderTable();
+  $('#raffleBtn').style.display=activeTab==='Sem contato'?'none':'flex';
+});
+$('#refreshBtn').addEventListener('click',load);
+$('#howLink').addEventListener('click',()=>alert('Conectar VÁRIAS planilhas:\n\n1. Em CADA planilha (Volume Operado, Controle Leo...): Extensões > Apps Script, cole o Code.gs e troque o TOKEN.\n2. Em cada uma: Implantar > Nova implantação > App da web > Acesso: qualquer pessoa. Copie a URL /exec.\n3. No topo deste arquivo, em SOURCES, cole a url e o token de cada planilha.\n4. Ordem importa: ponha primeiro a que tem as operações completas.\n5. Suba no GitHub; o Vercel publica.\n\nAs planilhas precisam estar no formato Google Sheets (não .xlsx).'));
+
+$('#exportBtn').addEventListener('click',()=>{
+  if(!DATA)return;
+  const esc=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  let csv='\ufeff';
+  for(const label of ['Academy','Seja Livre 95']){
+    csv+=label+'\n'+['Nome','Telefone','E-mail','Sinacor','CPF','Contratos','Dias'].map(esc).join(';')+'\n';
+    DATA.out[label].forEach(r=>{csv+=[r.nome,r.tel,r.email,r.sinacor,r.cpf,r.contr,r.dias].map(esc).join(';')+'\n';});
+    csv+='\n';
+  }
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`ativos_${$('#dDe').value}_a_${$('#dAte').value}.csv`; a.click();
+});
+
+const overlay=$('#overlay');
+$('#raffleBtn').addEventListener('click',()=>{
+  const pool=DATA.out[activeTab]; if(!pool||!pool.length){alert('Sem ativos pra sortear nessa barra.');return;}
+  overlay.classList.add('show'); $('#drawBarra').textContent=activeTab; spin(pool);
+});
+function spin(pool){
+  const slot=$('#slot'),nameEl=$('#drawName'),meta=$('#drawMeta');
+  slot.className='slot rolling'; meta.innerHTML='';
+  const winner=pool[Math.floor(Math.random()*pool.length)]; lastWinner=winner;
+  let t=0,dur=1900,ivv=60;
+  const timer=setInterval(()=>{
+    nameEl.textContent=pool[Math.floor(Math.random()*pool.length)].nome;
+    t+=ivv; ivv=Math.min(ivv*1.12,200);
+    if(t>=dur){clearInterval(timer);slot.className='slot done';nameEl.textContent=winner.nome;
+      meta.innerHTML=`<span>${winner.tel||'—'}</span> · <span>${winner.email||'—'}</span><br>${winner.contr.toLocaleString('pt-BR')} contratos em ${winner.dias} dia(s)`;}
+  },ivv);
+}
+$('#againBtn').addEventListener('click',()=>spin(DATA.out[activeTab]));
+$('#closeDraw').addEventListener('click',()=>overlay.classList.remove('show'));
+overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('show');});
+$('#copyBtn').addEventListener('click',()=>{
+  if(!lastWinner)return;
+  const txt=`${lastWinner.nome} — ${lastWinner.tel||''} ${lastWinner.email||''} (${activeTab})`.trim();
+  navigator.clipboard.writeText(txt).then(()=>{const b=$('#copyBtn');b.textContent='Copiado ✓';setTimeout(()=>b.textContent='Copiar contato',1400);});
+});
+
+function demoData(){
+  const mon=mondayOfWeek(new Date()); const ini=new Date(mon); ini.setDate(ini.getDate()-7);
+  const nA=['ADEILDON DA SILVA','MARCOS BARROSO LIMA','GIOVANNI REGO','FÁBIO PEDROSA','ALMIR COUTINHO','WALAFE SANTOS'];
+  const n9=['ADAILSON NASCIMENTO','ADRIANA FRANCA','ADIR OLIVEIRA','BRUNO TEIXEIRA','CAMILA ROCHA','DANIEL MARRA','EVALDO KUHN','RICARDO LUZ'];
+  const ops=[],contacts={}; let sid=400000;
+  function add(nomes,barra){nomes.forEach(nm=>{const sin=++sid;contacts[sin]={nome:nm,tel:'(00) 90000-0000',email:nm.split(' ')[0].toLowerCase()+'@email.com',cpf:String(sin),barra};
+    const dias=1+Math.floor(Math.random()*4);
+    for(let i=0;i<dias;i++){const d=new Date(ini);d.setDate(d.getDate()+i);ops.push({sinacor:sin,date:d,contr:5+Math.floor(Math.random()*300)});}});}
+  add(nA,'SEJA LIVRE ACADEMY'); add(n9,'SEJA LIVRE 95');
+  // operou e está na base como Academy, mas sem nome -> cai em "sem contato"
+  contacts[999999]={nome:'',tel:'',email:'',cpf:'',barra:'SEJA LIVRE ACADEMY'};
+  ops.push({sinacor:999999,date:new Date(ini),contr:40});
+  return {ops,contacts};
+}
+
+load();
+</script>
+</body>
+</html>
